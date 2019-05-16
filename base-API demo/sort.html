@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>vue基本指令筛选</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <style type="text/css">
+      body {
+        font-family: Helvetica Neue, Arial, sans-serif;
+        font-size: 14px;
+        color: #444;
+      }
+
+      table {
+        border: 2px solid skyblue;
+        border-radius: 3px;
+        background-color: #fff;
+      }
+
+      th {
+        background-color: skyblue;
+        color: rgba(255, 255, 255, 0.66);
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      td {
+        background-color: #f9f9f9;
+        text-align: center;
+      }
+
+      th,
+      td {
+        min-width: 120px;
+        padding: 10px 20px;
+      }
+
+      th.active {
+        color: #fff;
+      }
+
+      th.active .arrow {
+        opacity: 1;
+      }
+      #demo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #search {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+        margin-top: 20px;
+      }
+      .arrow {
+        display: inline-block;
+        vertical-align: middle;
+        width: 0;
+        height: 0;
+        margin-left: 5px;
+        opacity: 0.66;
+      }
+
+      .arrow.asc {
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-bottom: 4px solid #fff;
+      }
+
+      .arrow.dsc {
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 4px solid hotpink;
+      }
+    </style>
+    <!--HTML 模板，通常被称为[X-Templates]相当于 template写进去的一样-->
+    <script type="text/javascript" src="js/vue.min.js"></script>
+    <script type="text/x-template" id="grid-template">
+      <table>
+        <thead>
+          <tr>
+            <th v-for="key in columns"
+              @click="sortBy(key)"
+              :class="{ active: sortKey == key }">
+              <!--capitalize 是自定义过滤器函数，key 为capitalize的第一个参数-->
+              {{ key | capitalize }}
+
+              <span v-if="key!=='年龄'" class="arrow" :class="sortOrders[key] > 0 ? 'asc' : 'dsc'">
+              </span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="entry  in filteredData">
+            <td v-for="key in columns">
+              {{ entry[key] }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </script>
+  </head>
+  <body>
+    <div id="demo">
+      <div>
+        <from id="search">
+          Search <input name="query" v-model="searchQuery" />
+        </from>
+        <demo-grid
+          :data="gridData"
+          :columns="gridColumns"
+          :filter-key="searchQuery"
+        >
+        </demo-grid>
+      </div>
+    </div>
+    <script type="text/javascript">
+      Vue.component("demo-grid", {
+        template: "#grid-template",
+        props: {
+          data: Array,
+          columns: Array,
+          filterKey: String
+        },
+        //选用哪种样式；响应数据的变化
+        data() {
+          var sortOrders = {};
+          this.columns.forEach(function(key) {
+            sortOrders[key] = 1;
+          });
+          return {
+            sortKey: "",
+            sortOrders: sortOrders
+          };
+        },
+        computed: {
+          // 处理数据使其遍历计算结果
+          filteredData() {
+            var sortKey = this.sortKey;
+            var filterKey = this.filterKey && this.filterKey.toLowerCase();
+            var order = this.sortOrders[sortKey] || 1;
+            var data = this.data;
+            console.log(filterKey);
+            // 输入框查询
+            if (filterKey) {
+              data = data.filter(function(row) {
+                return Object.keys(row).some(function(key) {
+                  console.log(key);
+                  console.log(filterKey);
+                  return (
+                    String(row[key])
+                      .toLowerCase()
+                      .indexOf(filterKey) > -1
+                  );
+                });
+              });
+            }
+            //排序方法
+            if (sortKey) {
+              data = data.slice().sort(function(a, b) {
+                a = a[sortKey];
+                b = b[sortKey];
+                return (a === b ? 0 : a > b ? 1 : -1) * order;
+              });
+            }
+            return data;
+          }
+        },
+        filters: {
+          //过滤属性应用
+          capitalize(str) {
+            return `${new Date().getFullYear()}资讯---${str}`;
+          }
+        },
+        methods: {
+          //升序或者降序
+          sortBy(key) {
+            if (key !== "年龄") {
+              this.sortKey = key;
+              this.sortOrders[key] = this.sortOrders[key] * -1;
+            }
+          }
+        }
+      });
+      var demo = new Vue({
+        el: "#demo",
+        data: {
+          searchQuery: "",
+          gridColumns: ["姓名", "财富", "年龄"],
+          gridData: [
+            { 姓名: "马云", 财富: Infinity, 年龄: 54 },
+            { 姓名: "马化腾", 财富: 9000, 年龄: 47 },
+            { 姓名: "刘强东", 财富: 7000, 年龄: 46 },
+            { 姓名: "王健林", 财富: 8000, 年龄: 64 }
+          ]
+        }
+      });
+    </script>
+  </body>
+</html>
